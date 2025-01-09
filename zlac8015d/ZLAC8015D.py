@@ -4,7 +4,7 @@ import numpy as np
 
 class Controller:
 
-	def __init__(self, port="/dev/ttyUSB0"):
+	def __init__(self, port="/dev/pts/1"):
 
 		self._port = port
 
@@ -61,7 +61,12 @@ class Controller:
 		self.POS_SYNC = 0x10
 		self.POS_L_START = 0x11
 		self.POS_R_START = 0x12
-
+		########################
+		#    BRAKE CONTROL     #
+		########################
+		self.R_BRAKE = 0x201B
+		self.L_BRAKE = 0x201A
+		
 		####################
 		## Operation Mode ##
 		####################
@@ -168,7 +173,8 @@ class Controller:
 
 	def clear_alarm(self):
 		result = self.client.write_register(self.CONTROL_REG, self.ALRM_CLR, unit=self.ID)
-
+	def emergency_stop(self):
+		result = self.client.write_register(self.CONTROL_REG,self.EMER_STOP, unit=self.ID)
 	def set_accel_time(self, L_ms, R_ms):
 
 		if L_ms > 32767:
@@ -183,7 +189,12 @@ class Controller:
 
 		result = self.client.write_registers(self.L_ACL_TIME, [int(L_ms),int(R_ms)], unit=self.ID)
 
-
+	def activate_brake(self):
+		self.client.write_register(self.L_BRAKE, 0x0001, unit=self.ID)  # Left brake
+		self.client.write_register(self.R_BRAKE, 0x0001, unit=self.ID)  # Right brake
+	def deactivate_brake(self):
+		self.client.write_register(self.L_BRAKE, 0x0000, unit=self.ID)  # Left brake
+		self.client.write_register(self.R_BRAKE, 0x0000, unit=self.ID)  # Right brake
 	def set_decel_time(self, L_ms, R_ms):
 
 		if L_ms > 32767:
