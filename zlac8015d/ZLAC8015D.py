@@ -295,7 +295,15 @@ class Controller:
 		LO_WORD = dec & 0x0000FFFF
 
 		return [HI_WORD, LO_WORD]
-
+	##################
+	# Enable Estops on inputs and save function
+	def enable_estop_1(self):
+		result = self.client.write_register(0x2017, 0x0009, unit=self.ID)
+	def enable_estop_2(self):
+		result = self.client.write_register(0x2018, 0x0009, unit=self.ID)
+	def save_estop(self):
+		result = self.client.write_register(0x2010, 0x0001, unit=self.ID)
+	#############################
 	def set_relative_angle(self, ang_L, ang_R):
 
 		L_array = self.deg_to_32bitArray(ang_L)
