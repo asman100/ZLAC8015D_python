@@ -51,6 +51,49 @@ class Controller:
 		self.L_FAULT = 0x20A5
 		self.R_FAULT = 0x20A6
 
+		################################
+		## PID & Control Loop Params  ##
+		################################
+		## Left Motor
+		# Current Loop
+		self.L_KP_CURRENT = 0x2038
+		self.L_KI_CURRENT = 0x2039
+		# Speed Loop
+		self.L_KP_SPEED = 0x203C
+		self.L_KI_SPEED = 0x203D
+		self.L_KF_SPEED = 0x203E
+		self.L_SPEED_SMOOTH_COEFF = 0x2037
+		# Position Loop
+		self.L_KP_POSITION = 0x203F
+		self.L_KF_POSITION = 0x2040
+		# Other Related Parameters (Left Motor)
+		self.L_FF_OUTPUT_SMOOTH_COEFF = 0x203A
+		self.L_TORQUE_OUTPUT_SMOOTH_COEFF = 0x203B
+		self.L_SPEED_OBSERVER_COEFF1 = 0x2047
+		self.L_SPEED_OBSERVER_COEFF2 = 0x2048
+		self.L_SPEED_OBSERVER_COEFF3 = 0x2049
+		self.L_SPEED_OBSERVER_COEFF4 = 0x204A
+
+		## Right Motor
+		# Current Loop
+		self.R_KP_CURRENT = 0x2068
+		self.R_KI_CURRENT = 0x2069
+		# Speed Loop
+		self.R_KP_SPEED = 0x206C
+		self.R_KI_SPEED = 0x206D
+		self.R_KF_SPEED = 0x206E
+		self.R_SPEED_SMOOTH_COEFF = 0x2067
+		# Position Loop
+		self.R_KP_POSITION = 0x206F
+		self.R_KF_POSITION = 0x2070
+		# Other Related Parameters (Right Motor)
+		self.R_FF_OUTPUT_SMOOTH_COEFF = 0x206A
+		self.R_TORQUE_OUTPUT_SMOOTH_COEFF = 0x206B
+		self.R_SPEED_OBSERVER_COEFF1 = 0x2077
+		self.R_SPEED_OBSERVER_COEFF2 = 0x2078
+		self.R_SPEED_OBSERVER_COEFF3 = 0x2079
+		self.R_SPEED_OBSERVER_COEFF4 = 0x207A
+
 		########################
 		## Control CMDs (REG) ##
 		########################
@@ -360,3 +403,185 @@ class Controller:
 		r_tick = np.int32(((r_pul_hi & 0xFFFF) << 16) | (r_pul_lo & 0xFFFF))
 
 		return l_tick, r_tick
+
+	################################################
+	## Methods for PID & Control Loop Parameters  ##
+	################################################
+
+	# --- Left Motor Methods ---
+
+	# Left Motor Current Loop
+	def set_left_kp_current(self, kp_current):
+		"""Sets Kp for the left motor current loop."""
+		return self.client.write_register(self.L_KP_CURRENT, int(kp_current), unit=self.ID)
+
+	def set_left_ki_current(self, ki_current):
+		"""Sets Ki for the left motor current loop."""
+		return self.client.write_register(self.L_KI_CURRENT, int(ki_current), unit=self.ID)
+
+	def get_left_current_loop_params(self):
+		"""Gets Kp and Ki for the left motor current loop."""
+		regs = self.modbus_fail_read_handler(self.L_KP_CURRENT, 2)
+		return {"kp_current": regs[0], "ki_current": regs[1]}
+	
+	# Left Motor Speed Loop
+	def set_left_kp_speed(self, kp_speed):
+		"""Sets Kp for the left motor speed loop."""
+		return self.client.write_register(self.L_KP_SPEED, int(kp_speed), unit=self.ID)
+
+	def set_left_ki_speed(self, ki_speed):
+		"""Sets Ki for the left motor speed loop."""
+		return self.client.write_register(self.L_KI_SPEED, int(ki_speed), unit=self.ID)
+
+	def set_left_kf_speed(self, kf_speed):
+		"""Sets Kf for the left motor speed loop."""
+		return self.client.write_register(self.L_KF_SPEED, int(kf_speed), unit=self.ID)
+
+	def set_left_speed_smooth_coeff(self, speed_smooth_coeff):
+		"""Sets the speed smoothing coefficient for the left motor."""
+		return self.client.write_register(self.L_SPEED_SMOOTH_COEFF, int(speed_smooth_coeff), unit=self.ID)
+
+	def get_left_speed_loop_params(self):
+		"""Gets Kp, Ki, Kf, and smoothing coefficient for the left motor speed loop."""
+		smooth_coeff = self.modbus_fail_read_handler(self.L_SPEED_SMOOTH_COEFF, 1)[0]
+		gains = self.modbus_fail_read_handler(self.L_KP_SPEED, 3) # Kp, Ki, Kf
+		return {"kp_speed": gains[0], "ki_speed": gains[1], "kf_speed": gains[2], "speed_smooth_coeff": smooth_coeff}
+	
+	# Left Motor Position Loop
+	def set_left_kp_position(self, kp_position):
+		"""Sets Kp for the left motor position loop."""
+		return self.client.write_register(self.L_KP_POSITION, int(kp_position), unit=self.ID)
+
+	def set_left_kf_position(self, kf_position):
+		"""Sets Kf for the left motor position loop."""
+		return self.client.write_register(self.L_KF_POSITION, int(kf_position), unit=self.ID)
+
+	def get_left_position_loop_params(self):
+		"""Gets Kp and Kf for the left motor position loop."""
+		regs = self.modbus_fail_read_handler(self.L_KP_POSITION, 2)
+		return {"kp_position": regs[0], "kf_position": regs[1]}
+	
+	# Left Motor Other Parameters
+	def set_left_ff_output_smooth_coeff(self, ff_smooth_coeff):
+		"""Sets feedforward output smoothing coefficient for the left motor."""
+		return self.client.write_register(self.L_FF_OUTPUT_SMOOTH_COEFF, int(ff_smooth_coeff), unit=self.ID)
+
+	def set_left_torque_output_smooth_coeff(self, torque_smooth_coeff):
+		"""Sets torque output smoothing coefficient for the left motor."""
+		return self.client.write_register(self.L_TORQUE_OUTPUT_SMOOTH_COEFF, int(torque_smooth_coeff), unit=self.ID)
+
+	def get_left_other_params(self):
+		"""Gets feedforward and torque output smoothing coefficients for the left motor."""
+		regs = self.modbus_fail_read_handler(self.L_FF_OUTPUT_SMOOTH_COEFF, 2)
+		return {"ff_output_smooth_coeff": regs[0], "torque_output_smooth_coeff": regs[1]}
+	
+	# Left Motor Speed Observer Coefficients
+	def set_left_speed_observer_coeff1(self, coeff1):
+		"""Sets speed observer coefficient 1 for the left motor."""
+		return self.client.write_register(self.L_SPEED_OBSERVER_COEFF1, int(coeff1), unit=self.ID)
+
+	def set_left_speed_observer_coeff2(self, coeff2):
+		"""Sets speed observer coefficient 2 for the left motor."""
+		return self.client.write_register(self.L_SPEED_OBSERVER_COEFF2, int(coeff2), unit=self.ID)
+
+	def set_left_speed_observer_coeff3(self, coeff3):
+		"""Sets speed observer coefficient 3 for the left motor."""
+		return self.client.write_register(self.L_SPEED_OBSERVER_COEFF3, int(coeff3), unit=self.ID)
+
+	def set_left_speed_observer_coeff4(self, coeff4):
+		"""Sets speed observer coefficient 4 for the left motor."""
+		return self.client.write_register(self.L_SPEED_OBSERVER_COEFF4, int(coeff4), unit=self.ID)
+
+	def get_left_speed_observer_coeffs(self):
+		"""Gets speed observer coefficients for the left motor."""
+		regs = self.modbus_fail_read_handler(self.L_SPEED_OBSERVER_COEFF1, 4)
+		return {"coeff1": regs[0], "coeff2": regs[1], "coeff3": regs[2], "coeff4": regs[3]}
+	
+	# --- Right Motor Methods ---
+
+	# Right Motor Current Loop
+	def set_right_kp_current(self, kp_current):
+		"""Sets Kp for the right motor current loop."""
+		return self.client.write_register(self.R_KP_CURRENT, int(kp_current), unit=self.ID)
+
+	def set_right_ki_current(self, ki_current):
+		"""Sets Ki for the right motor current loop."""
+		return self.client.write_register(self.R_KI_CURRENT, int(ki_current), unit=self.ID)
+
+	def get_right_current_loop_params(self):
+		"""Gets Kp and Ki for the right motor current loop."""
+		regs = self.modbus_fail_read_handler(self.R_KP_CURRENT, 2)
+		return {"kp_current": regs[0], "ki_current": regs[1]}
+	
+	# Right Motor Speed Loop
+	def set_right_kp_speed(self, kp_speed):
+		"""Sets Kp for the right motor speed loop."""
+		return self.client.write_register(self.R_KP_SPEED, int(kp_speed), unit=self.ID)
+
+	def set_right_ki_speed(self, ki_speed):
+		"""Sets Ki for the right motor speed loop."""
+		return self.client.write_register(self.R_KI_SPEED, int(ki_speed), unit=self.ID)
+
+	def set_right_kf_speed(self, kf_speed):
+		"""Sets Kf for the right motor speed loop."""
+		return self.client.write_register(self.R_KF_SPEED, int(kf_speed), unit=self.ID)
+
+	def set_right_speed_smooth_coeff(self, speed_smooth_coeff):
+		"""Sets the speed smoothing coefficient for the right motor."""
+		return self.client.write_register(self.R_SPEED_SMOOTH_COEFF, int(speed_smooth_coeff), unit=self.ID)
+
+	def get_right_speed_loop_params(self):
+		"""Gets Kp, Ki, Kf, and smoothing coefficient for the right motor speed loop."""
+		smooth_coeff = self.modbus_fail_read_handler(self.R_SPEED_SMOOTH_COEFF, 1)[0]
+		gains = self.modbus_fail_read_handler(self.R_KP_SPEED, 3) # Kp, Ki, Kf
+		return {"kp_speed": gains[0], "ki_speed": gains[1], "kf_speed": gains[2], "speed_smooth_coeff": smooth_coeff}
+
+	# Right Motor Position Loop
+	def set_right_kp_position(self, kp_position):
+		"""Sets Kp for the right motor position loop."""
+		return self.client.write_register(self.R_KP_POSITION, int(kp_position), unit=self.ID)
+
+	def set_right_kf_position(self, kf_position):
+		"""Sets Kf for the right motor position loop."""
+		return self.client.write_register(self.R_KF_POSITION, int(kf_position), unit=self.ID)
+
+	def get_right_position_loop_params(self):
+		"""Gets Kp and Kf for the right motor position loop."""
+		regs = self.modbus_fail_read_handler(self.R_KP_POSITION, 2)
+		return {"kp_position": regs[0], "kf_position": regs[1]}
+	
+	# Right Motor Other Parameters
+	def set_right_ff_output_smooth_coeff(self, ff_smooth_coeff):
+		"""Sets feedforward output smoothing coefficient for the right motor."""
+		return self.client.write_register(self.R_FF_OUTPUT_SMOOTH_COEFF, int(ff_smooth_coeff), unit=self.ID)
+
+	def set_right_torque_output_smooth_coeff(self, torque_smooth_coeff):
+		"""Sets torque output smoothing coefficient for the right motor."""
+		return self.client.write_register(self.R_TORQUE_OUTPUT_SMOOTH_COEFF, int(torque_smooth_coeff), unit=self.ID)
+
+	def get_right_other_params(self):
+		"""Gets feedforward and torque output smoothing coefficients for the right motor."""
+		regs = self.modbus_fail_read_handler(self.R_FF_OUTPUT_SMOOTH_COEFF, 2)
+		return {"ff_output_smooth_coeff": regs[0], "torque_output_smooth_coeff": regs[1]}
+	
+	# Right Motor Speed Observer Coefficients
+	def set_right_speed_observer_coeff1(self, coeff1):
+		"""Sets speed observer coefficient 1 for the right motor."""
+		return self.client.write_register(self.R_SPEED_OBSERVER_COEFF1, int(coeff1), unit=self.ID)
+
+	def set_right_speed_observer_coeff2(self, coeff2):
+		"""Sets speed observer coefficient 2 for the right motor."""
+		return self.client.write_register(self.R_SPEED_OBSERVER_COEFF2, int(coeff2), unit=self.ID)
+
+	def set_right_speed_observer_coeff3(self, coeff3):
+		"""Sets speed observer coefficient 3 for the right motor."""
+		return self.client.write_register(self.R_SPEED_OBSERVER_COEFF3, int(coeff3), unit=self.ID)
+
+	def set_right_speed_observer_coeff4(self, coeff4):
+		"""Sets speed observer coefficient 4 for the right motor."""
+		return self.client.write_register(self.R_SPEED_OBSERVER_COEFF4, int(coeff4), unit=self.ID)
+
+	def get_right_speed_observer_coeffs(self):
+		"""Gets speed observer coefficients for the right motor."""
+		regs = self.modbus_fail_read_handler(self.R_SPEED_OBSERVER_COEFF1, 4)
+		return {"coeff1": regs[0], "coeff2": regs[1], "coeff3": regs[2], "coeff4": regs[3]}
